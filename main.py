@@ -1,5 +1,4 @@
 from os import startfile
-
 import pyzbar.pyzbar as pyzbar
 import pywifi
 import cv2
@@ -33,7 +32,7 @@ def openbrowser():
 
 
 def read_qr_code():
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(cv2.CAP_DSHOW)
     cv2.namedWindow("Camera Feed", cv2.WINDOW_NORMAL)
     cv2.resizeWindow("Camera Feed", 640, 480)
     while True:
@@ -43,17 +42,15 @@ def read_qr_code():
         decoded = pyzbar.decode(gray)
         for code in decoded:
             data = code.data.decode('utf-8')
-            print("QR Code Data:", data)
+
             if data.startswith("WIFI:S:"):
                 data = data[7:]
                 parts = data.split(";")
                 ssid = parts[0][0:]
                 password = parts[2][2:]
-                print("SSID:", ssid)
-                print("Password:", password)
             else:
-                print("Invalid QR code")
-                return
+                raise Exception("Invalid QR code")
+
             if connect_wifi(ssid, password):
                 print("Connected to WiFi network:", ssid)
                 openbrowser()
@@ -61,12 +58,17 @@ def read_qr_code():
                 cv2.destroyAllWindows()
                 return
             else:
-                print("Failed to connect to WiFi network:", ssid)
-                return
+                raise Exception("Failed to connect to WiFi network:", ssid)
+
         if cv2.waitKey(1) & 0xFF == ord('q'):
             cap.release()
             cv2.destroyAllWindows()
             break
 
 
-read_qr_code()
+def main():
+    read_qr_code()
+
+
+if __name__ == "__main__":
+    main()
