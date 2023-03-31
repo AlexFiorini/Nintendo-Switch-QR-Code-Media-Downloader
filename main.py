@@ -1,9 +1,15 @@
-from os import startfile
 import pyzbar.pyzbar as pyzbar
 import pywifi
 import cv2
 from pywifi import const
 from time import sleep
+import json
+import os
+import urllib.request
+
+url = "http://192.168.0.1/"
+url_json = url + "data.json"
+url_file = url + "img/"
 
 
 def connect_wifi(ssid, password):
@@ -28,7 +34,30 @@ def connect_wifi(ssid, password):
 
 
 def openbrowser():
-    startfile("http://192.168.0.1/index.html")
+    with urllib.request.urlopen(url_json) as response:
+        data = json.loads(response.read())
+
+    filetype = data["FileType"]
+    if filetype == "photo":
+        image_names = data["FileNames"]
+        if not os.path.exists("img"):
+            os.makedirs("img")
+
+        for image_name in image_names:
+            image_url = url_file + image_name
+            save_path = os.path.join("img", image_name)
+            urllib.request.urlretrieve(image_url, save_path)
+    elif filetype == "movie":
+        video_name = data["FileNames"][0]
+        if not os.path.exists("video"):
+            os.makedirs("video")
+
+        video_url = url_file + video_name
+        save_path = os.path.join("video", video_name)
+        urllib.request.urlretrieve(video_url, save_path)
+    else:
+        raise Exception("Invalid file type")
+    print("Download complete")
 
 
 def read_qr_code():
